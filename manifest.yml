@@ -1,0 +1,10 @@
+applications:
+  - name: qm-schedule-backend
+    memory: 128M
+    instances: 1
+    path: backend
+    buildpacks:
+      - nodejs_buildpack
+    command: node server.js
+    env:
+      NODE_ENV: production
