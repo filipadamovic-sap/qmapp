@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VH Dispatch — QM</title>
+
+<style>
+/* ── FIORI TOKENS as fallbacks ───────────────────────── */
+:root {
+  --_bg:        var(--sapBackgroundColor, #f5f6f7);
+  --_surface:   var(--sapTile_Background, #ffffff);
+  --_text:      var(--sapTextColor, #1d2d3e);
+  --_text2:     var(--sapContent_LabelColor, #556b82);
+  --_border:    var(--sapTile_BorderColor, #d9d9d9);
+  --_brand:     var(--sapBrandColor, #0070f2);
+  --_positive:  var(--sapPositiveColor, #188918);
+  --_negative:  var(--sapNegativeColor, #b00);
+  --_critical:  var(--sapCriticalColor, #e76500);
+  --_info:      var(--sapInformativeColor, #0070f2);
+  --_hover-bg:  var(--sapList_Hover_Background, #eaf1fb);
+  --_list-bg:   var(--sapList_Background, #fff);
+  --_list-hdr:  var(--sapList_HeaderBackground, #f0f0f0);
+  --_list-bd:   var(--sapList_BorderColor, #e4e4e4);
+  --_focus:     var(--sapContent_FocusColor, #0064d9);
+  --_r:         var(--sapElement_BorderCornerRadius, 0.5rem);
+  --_item-h:    var(--sapList_ItemHeight, 2.75rem);
+  --_font:      var(--sapFontFamily, "72", "72full", Arial, Helvetica, sans-serif);
+  --_fs:        var(--sapFontSize, 0.875rem);
+  --_shell-bg:  var(--sapShellColor, #1b344c);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--_font);
+  background: var(--_bg);
+  color: var(--_text);
+  font-size: var(--_fs);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SHELL BAR ───────────────────────────────────────── */
+.shell {
+  background: var(--_shell-bg);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  height: 2.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.shell-brand {
+  display: flex; align-items: center; gap: 0.625rem; flex-shrink: 0;
+}
+.shell-logo {
+  width: 1.75rem; height: 1.75rem;
+  background: var(--sapIndicationColor_6, #e9730c);
+  border-radius: 0.25rem;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.6875rem; color: #fff; letter-spacing: -0.02em;
+}
+.shell-title { font-size: 0.875rem; font-weight: 700; color: rgba(255,255,255,.95); }
+.shell-sub   { font-size: 0.6875rem; color: rgba(255,255,255,.55); margin-top: 0.0625rem; }
+
+/* ── TABS ────────────────────────────────────────────── */
+.shell-tabs {
+  display: flex;
+  gap: 0;
+  margin-left: auto;
+}
+.shell-tab {
+  padding: 0 1rem;
+  height: 2.75rem;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,.7);
+  font-family: var(--_font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center;
+  border-bottom: 0.1875rem solid transparent;
+  transition: color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.shell-tab:hover { color: #fff; }
+.shell-tab.active {
+  color: #fff;
+  font-weight: 600;
+  border-bottom-color: var(--sapIndicationColor_6, #e9730c);
+}
+.shell-tab:focus-visible {
+  outline: 2px solid var(--_focus);
+  outline-offset: -2px;
+}
+@media(prefers-reduced-motion:reduce){ .shell-tab { transition: none; } }
+
+.shell-right {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.week-chip {
+  font-size: 0.75rem; font-weight: 600;
+  color: rgba(255,255,255,.75);
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  display: flex; align-items: center; gap: 0.375rem;
+}
+.live-dot {
+  width: 0.375rem; height: 0.375rem;
+  background: var(--_positive);
+  border-radius: 50%;
+  animation: blink 2.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+@media(prefers-reduced-motion:reduce){ .live-dot{animation:none} }
+
+.shell-btn {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.3125rem 0.875rem;
+  border-radius: var(--_r);
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  font-family: var(--_font);
+  font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+  min-height: 1.875rem;
+}
+.shell-btn:hover { background: rgba(255,255,255,.2); }
+.shell-btn:focus-visible { outline: 2px solid var(--_focus); outline-offset: 2px; }
+
+/* ── MAIN ────────────────────────────────────────────── */
+main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── PAGE HEADER ─────────────────────────────────────── */
+.page-hdr {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1.25rem; flex-wrap: wrap;
+}
+.page-hdr h2 {
+  font-size: var(--sapFontHeader4Size, 1.125rem);
+  font-weight: 700;
+  color: var(--_text);
+}
+
+/* ── BADGE (Fiori-style) ─────────────────────────────── */
+.fi-badge {
+  display: inline-flex; align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.625rem;
+  font-size: 0.6875rem; font-weight: 700;
+  white-space: nowrap;
+}
+.fi-badge-blue  { background: var(--sapIndicationColor_1_Background, #e8f1fc); color: var(--sapIndicationColor_1_TextColor, #0064d9); border: 1px solid var(--sapIndicationColor_1_BorderColor, #b3d1f5); }
+.fi-badge-green { background: var(--sapIndicationColor_8_Background, #e3f1e3); color: var(--sapIndicationColor_8_TextColor, #188918); border: 1px solid var(--sapIndicationColor_8_BorderColor, #acd9ac); }
+.fi-badge-red   { background: var(--sapIndicationColor_2_Background, #fce8e8); color: var(--sapIndicationColor_2_TextColor, #b00); border: 1px solid var(--sapIndicationColor_2_BorderColor, #f5b3b3); }
+.fi-badge-orange{ background: var(--sapIndicationColor_5_Background, #fef0e0); color: var(--sapIndicationColor_5_TextColor, #c14646); border: 1px solid var(--sapIndicationColor_5_BorderColor, #f9c46d); }
+.fi-badge-purple{ background: var(--sapIndicationColor_3_Background, #f0e8fc); color: var(--sapIndicationColor_3_TextColor, #6a1cb7); border: 1px solid var(--sapIndicationColor_3_BorderColor, #d0b3f5); }
+.fi-badge-grey  { background: var(--sapIndicationColor_6_Background, #f5f5f5); color: var(--sapIndicationColor_6_TextColor, #556b82); border: 1px solid var(--sapIndicationColor_6_BorderColor, #c9c9c9); }
+.fi-badge-teal  { background: var(--sapIndicationColor_4_Background, #e0f5f5); color: var(--sapIndicationColor_4_TextColor, #0e7373); border: 1px solid var(--sapIndicationColor_4_BorderColor, #a3d9d9); }
+
+/* Status badge mapping */
+.sc { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 0.625rem; font-size: 0.6875rem; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
+.sc-available { background:var(--sapIndicationColor_8_Background,#e3f1e3); color:var(--sapIndicationColor_8_TextColor,#188918); border-color:var(--sapIndicationColor_8_BorderColor,#acd9ac); }
+.sc-ooo       { background:var(--sapIndicationColor_2_Background,#fce8e8); color:var(--sapIndicationColor_2_TextColor,#b00);    border-color:var(--sapIndicationColor_2_BorderColor,#f5b3b3); }
+.sc-qm-am     { background:var(--sapIndicationColor_1_Background,#e8f1fc); color:var(--sapIndicationColor_1_TextColor,#0064d9); border-color:var(--sapIndicationColor_1_BorderColor,#b3d1f5); }
+.sc-qm-pm     { background:var(--sapIndicationColor_3_Background,#f0e8fc); color:var(--sapIndicationColor_3_TextColor,#6a1cb7); border-color:var(--sapIndicationColor_3_BorderColor,#d0b3f5); }
+.sc-chat-am   { background:var(--sapIndicationColor_8_Background,#e3f1e3); color:var(--sapIndicationColor_8_TextColor,#188918); border-color:var(--sapIndicationColor_8_BorderColor,#acd9ac); }
+.sc-chat-pm   { background:var(--sapIndicationColor_4_Background,#e0f5f5); color:var(--sapIndicationColor_4_TextColor,#0e7373); border-color:var(--sapIndicationColor_4_BorderColor,#a3d9d9); }
+.sc-edu       { background:var(--sapIndicationColor_5_Background,#fef0e0); color:var(--sapIndicationColor_5_TextColor,#c14646); border-color:var(--sapIndicationColor_5_BorderColor,#f9c46d); }
+.sc-admin     { background:var(--sapIndicationColor_6_Background,#f5f5f5); color:var(--sapIndicationColor_6_TextColor,#556b82); border-color:var(--sapIndicationColor_6_BorderColor,#c9c9c9); }
+.sc-mentoring { background:var(--sapIndicationColor_3_Background,#f0e8fc); color:var(--sapIndicationColor_3_TextColor,#6a1cb7); border-color:var(--sapIndicationColor_3_BorderColor,#d0b3f5); }
+.sc-project   { background:var(--sapIndicationColor_5_Background,#fef0e0); color:var(--sapIndicationColor_5_TextColor,#c14646); border-color:var(--sapIndicationColor_5_BorderColor,#f9c46d); }
+.sc-late      { background:var(--sapIndicationColor_7_Background,#fce8d5); color:var(--sapIndicationColor_7_TextColor,#8c4a00); border-color:var(--sapIndicationColor_7_BorderColor,#f5c9a3); }
+.sc-km        { background:var(--sapIndicationColor_1_Background,#e8f1fc); color:var(--sapIndicationColor_1_TextColor,#0064d9); border-color:var(--sapIndicationColor_1_BorderColor,#b3d1f5); }
+.sc-ooo-km    { background:var(--sapIndicationColor_2_Background,#fce8e8); color:var(--sapIndicationColor_2_TextColor,#b00);    border-color:var(--sapIndicationColor_2_BorderColor,#f5b3b3); }
+.sc-none      { background:var(--_list-bg); color:var(--_text2); border-color:var(--_border); }
+
+/* ── TABLE CARD ──────────────────────────────────────── */
+.fi-table-card {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.fi-table-card-header {
+  padding: 0.625rem 1rem;
+  background: var(--_list-hdr);
+  border-bottom: 1px solid var(--_list-bd);
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; font-weight: 700;
+  color: var(--_text2);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* Schedule table */
+.sched-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.sched-th {
+  background: var(--sapList_TableHeaderBackground, #f5f5f5);
+  border-bottom: 1px solid var(--_list-bd);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--_text2);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.sched-th.ctr { text-align: center; min-width: 7.5rem; }
+.sched-tr {
+  border-bottom: 1px solid var(--_list-bd);
+  transition: background .1s;
+}
+.sched-tr:last-child { border-bottom: none; }
+.sched-tr:hover { background: var(--_hover-bg); }
+.sched-td { padding: 0.375rem 0.75rem; vertical-align: middle; }
+.sched-td.ctr { text-align: center; padding: 0.25rem 0.375rem; }
+
+/* Engineer cell */
+.eng-cell { display: flex; align-items: center; gap: 0.5rem; }
+.av {
+  width: 2rem; height: 2rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6875rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.eng-name { font-weight: 600; color: var(--_text); font-size: 0.8125rem; }
+.eng-id   { font-size: 0.6875rem; color: var(--_text2); font-family: "72Mono", "Courier New", monospace; }
+
+/* Team badge */
+.tb {
+  display: inline-block; padding: 0.125rem 0.4375rem;
+  border-radius: 0.625rem; font-size: 0.625rem; font-weight: 700;
+}
+
+/* Status select */
+.status-sel {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.3125rem 1.625rem 0.3125rem 0.625rem;
+  font-family: var(--_font);
+  font-size: 0.75rem; font-weight: 600;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23556b82'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-color: var(--_surface);
+  transition: border-color .12s;
+  min-height: 1.75rem;
+  width: 100%;
+}
+.status-sel:focus {
+  outline: 2px solid var(--_focus);
+  outline-offset: 1px;
+  border-color: var(--_brand);
+}
+/* colored states */
+.sel-available { background-color:#e3f1e3; color:#188918; border-color:#acd9ac; }
+.sel-ooo       { background-color:#fce8e8; color:#b00;    border-color:#f5b3b3; }
+.sel-qm-am     { background-color:#e8f1fc; color:#0064d9; border-color:#b3d1f5; }
+.sel-qm-pm     { background-color:#f0e8fc; color:#6a1cb7; border-color:#d0b3f5; }
+.sel-chat-am   { background-color:#e3f1e3; color:#188918; border-color:#acd9ac; }
+.sel-chat-pm   { background-color:#e0f5f5; color:#0e7373; border-color:#a3d9d9; }
+.sel-edu       { background-color:#fef0e0; color:#c14646; border-color:#f9c46d; }
+.sel-admin     { background-color:#f5f5f5; color:#556b82; border-color:#c9c9c9; }
+.sel-mentoring { background-color:#f0e8fc; color:#6a1cb7; border-color:#d0b3f5; }
+.sel-project   { background-color:#fef0e0; color:#c14646; border-color:#f9c46d; }
+.sel-late      { background-color:#fce8d5; color:#8c4a00; border-color:#f5c9a3; }
+.sel-km        { background-color:#e8f1fc; color:#0064d9; border-color:#b3d1f5; }
+.sel-ooo-km    { background-color:#fce8e8; color:#b00;    border-color:#f5b3b3; }
+
+/* QM strip */
+.qm-strip {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--_list-bd);
+  background: var(--_bg);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+.qm-day {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.5rem;
+  text-align: center;
+}
+.qm-day.has-qm {
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+  border-color: var(--sapIndicationColor_1_BorderColor, #b3d1f5);
+}
+.qm-day-name { font-size: 0.625rem; font-weight: 700; color: var(--_text2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem; }
+.qm-slot { display: flex; align-items: center; gap: 0.25rem; justify-content: center; margin-bottom: 0.1875rem; }
+.qm-slot:last-child { margin-bottom: 0; }
+.qm-slot-label { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; color: var(--_text2); }
+.qm-slot-label.am { color: var(--_brand); }
+.qm-slot-label.pm { color: #6a1cb7; }
+.qm-who { font-size: 0.6875rem; font-weight: 600; color: var(--_text2); }
+.qm-who.set    { color: var(--_brand); }
+.qm-who.set-pm { color: #6a1cb7; }
+
+/* ── P1 QUEUE ────────────────────────────────────────── */
+.queue-top-row {
+  display: grid;
+  grid-template-columns: 1fr 21.25rem;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media(max-width:68.75rem){ .queue-top-row { grid-template-columns: 1fr; } }
+.queue-left { display: flex; flex-direction: column; gap: 0.75rem; }
+.queue-right { position: sticky; top: 3.5rem; }
+
+/* Assign bar */
+.assign-bar {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.875rem 1.125rem;
+}
+.assign-bar-inner { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
+.assign-fields { display: flex; gap: 0.5rem; flex: 1; flex-wrap: wrap; }
+.assign-next-hint { margin-top: 0.5rem; font-size: 0.75rem; color: var(--_text2); }
+.assign-next-hint strong { color: var(--_text); }
+
+.queue-input {
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--_font);
+  font-size: 0.8125rem;
+  transition: border-color .12s, box-shadow .12s;
+  min-height: 2.25rem; flex: 1; min-width: 8.75rem;
+  background: var(--_surface);
+  color: var(--_text);
+}
+.queue-input:focus {
+  outline: 2px solid var(--_focus);
+  outline-offset: 1px;
+  border-color: var(--_brand);
+}
+.day-sel {
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.4375rem 0.625rem;
+  font-family: var(--_font);
+  font-size: 0.75rem; font-weight: 600;
+  background: var(--_bg);
+  cursor: pointer;
+  min-height: 2.25rem; appearance: none;
+  color: var(--_text);
+}
+.day-sel:focus { outline: 2px solid var(--_focus); outline-offset: 1px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: var(--_r);
+  border: 1px solid transparent;
+  font-family: var(--_font);
+  font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  min-height: 2.25rem;
+  white-space: nowrap;
+}
+.btn:focus-visible { outline: 2px solid var(--_focus); outline-offset: 2px; }
+@media(prefers-reduced-motion:reduce){ .btn { transition: none; } }
+
+.btn-primary {
+  background: var(--sapButton_Emphasized_Background, #0064d9);
+  color: var(--sapButton_Emphasized_TextColor, #fff);
+  border-color: var(--sapButton_Emphasized_BorderColor, #0064d9);
+}
+.btn-primary:hover {
+  background: var(--sapButton_Emphasized_Hover_Background, #0052b3);
+  border-color: var(--sapButton_Emphasized_Hover_BorderColor, #0052b3);
+}
+.btn-default {
+  background: var(--sapButton_Background, #fff);
+  color: var(--sapButton_TextColor, #0064d9);
+  border-color: var(--sapButton_BorderColor, #0064d9);
+}
+.btn-default:hover {
+  background: var(--sapButton_Hover_Background, #e8f1fc);
+  border-color: var(--sapButton_Hover_BorderColor, #0064d9);
+}
+.btn-negative {
+  background: var(--sapButton_Negative_Background, #b00);
+  color: #fff;
+  border-color: var(--sapButton_Negative_BorderColor, #b00);
+}
+
+/* Hero card */
+.hero-card {
+  background: var(--sapShellColor, #1b344c);
+  border-radius: var(--_r);
+  padding: 1.25rem 1.375rem;
+  color: #fff;
+  display: flex; align-items: flex-start; gap: 1rem;
+  position: relative; overflow: hidden;
+}
+.hero-badge {
+  position: absolute; top: 0.75rem; right: 1rem;
+  font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: rgba(255,255,255,.45);
+}
+.hero-av {
+  width: 3.25rem; height: 3.25rem; min-width: 3.25rem;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 800; color: #fff;
+  border: 2px solid rgba(255,255,255,.2); flex-shrink: 0;
+}
+.hero-info { flex: 1; }
+.hero-name { font-size: var(--sapFontHeader4Size, 1.125rem); font-weight: 700; letter-spacing: -0.01em; }
+.hero-sub  { font-size: 0.75rem; color: rgba(255,255,255,.5); font-family: "72Mono","Courier New",monospace; margin-top: 0.125rem; }
+.hero-status-wrap { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.hero-tickets-wrap { margin-top: 0.625rem; }
+.hero-drop {
+  min-height: 2rem; border-radius: 0.375rem;
+  border: 2px dashed rgba(255,255,255,.2);
+  display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.375rem;
+  align-items: center; padding: 0.125rem 0.25rem;
+  transition: background .12s, border-color .12s;
+}
+.hero-drop.over { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.5); }
+.hero-ticket {
+  font-size: 0.75rem; font-weight: 700;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); color: #fff;
+  padding: 0.1875rem 0.625rem; border-radius: 1rem;
+  cursor: grab; user-select: none;
+  display: flex; align-items: center; gap: 0.25rem;
+  transition: background .12s;
+}
+.hero-ticket:hover { background: rgba(255,255,255,.22); }
+.hero-ticket:active { cursor: grabbing; }
+.hero-ticket.dragging { opacity: .3; }
+.hero-ticket .del { opacity: .5; cursor: pointer; font-size: 0.8125rem; line-height: 1; }
+.hero-ticket .del:hover { opacity: 1; }
+.hero-no-tickets { font-size: 0.75rem; color: rgba(255,255,255,.35); font-style: italic; }
+
+/* Queue table */
+.qt-wrap {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  overflow: hidden;
+}
+.qt-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.qt-th {
+  background: var(--sapList_TableHeaderBackground, #f5f5f5);
+  border-bottom: 1px solid var(--_list-bd);
+  padding: 0.5rem 0.75rem; text-align: left;
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--_text2);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.qt-row { border-bottom: 1px solid var(--_list-bd); transition: background .1s; }
+.qt-row:last-child { border-bottom: none; }
+.qt-row:hover { background: var(--_hover-bg); }
+.qt-row-next { background: var(--sapIndicationColor_1_Background, #e8f1fc); }
+.qt-row-next:hover { background: #d4e8f8; }
+.qt-row-unavail { opacity: .38; }
+.qt-td { padding: 0.5625rem 0.75rem; vertical-align: middle; }
+.qt-td-pointer { width: 1.375rem; text-align: center; color: var(--_brand); font-size: 0.8125rem; padding: 0.5625rem 0.25rem; }
+.qt-td-eng     { min-width: 10rem; }
+.qt-td-status  { width: 6.875rem; }
+.qt-td-tickets { min-width: 10rem; }
+.qt-td-action  { width: 8.75rem; text-align: right; padding-right: 0.875rem; }
+.qt-action-cell { display: flex; align-items: center; gap: 0.375rem; justify-content: flex-end; flex-wrap: wrap; }
+
+.qt-eng-cell { display: flex; align-items: center; gap: 0.5rem; }
+.qt-av { width: 1.75rem; height: 1.75rem; min-width: 1.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; color: #fff; }
+.qt-name { font-weight: 600; color: var(--_text); font-size: 0.8125rem; }
+.qt-id   { font-size: 0.625rem; color: var(--_text2); font-family: "72Mono","Courier New",monospace; }
+
+.eng-card-tickets {
+  display: flex; flex-wrap: wrap; flex-direction: row; gap: 0.25rem;
+  min-height: 1.75rem; min-width: 5rem;
+  border-radius: 0.375rem; border: 2px dashed transparent;
+  transition: background .12s, border-color .12s;
+  align-items: center;
+}
+.eng-card-tickets.over {
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+  border-color: var(--_brand);
+}
+.eng-ticket {
+  font-size: 0.6875rem; font-weight: 700;
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+  color: var(--_brand);
+  border: 1px solid var(--sapIndicationColor_1_BorderColor, #b3d1f5);
+  padding: 0.125rem 0.5rem; border-radius: 1rem;
+  cursor: grab; user-select: none;
+  display: flex; align-items: center; gap: 0.1875rem;
+  transition: opacity .12s;
+}
+.eng-ticket:active { cursor: grabbing; }
+.eng-ticket.dragging { opacity: .3; }
+.eng-ticket .del { opacity: .5; cursor: pointer; font-size: 0.75rem; }
+.eng-ticket .del:hover { opacity: 1; }
+.eng-no-tickets { font-size: 0.6875rem; color: var(--_text2); font-style: italic; }
+
+/* Buttons in table */
+.btn-manual-assign {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--_r);
+  border: 1px solid var(--sapButton_BorderColor, #0064d9);
+  background: var(--sapButton_Background, #fff);
+  color: var(--sapButton_TextColor, #0064d9);
+  font-family: var(--_font);
+  font-size: 0.6875rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: background .12s;
+  min-height: 1.75rem;
+}
+.btn-manual-assign:hover { background: var(--sapButton_Hover_Background, #e8f1fc); }
+.btn-manual-assign:disabled { border-color: var(--_border); color: var(--_text2); cursor: not-allowed; background: transparent; }
+.btn-manual-assign:focus-visible { outline: 2px solid var(--_focus); outline-offset: 2px; }
+
+.btn-teams-sm {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.25rem 0.5625rem;
+  border-radius: var(--_r);
+  border: 1px solid #5b5ea6;
+  background: transparent;
+  color: #5b5ea6;
+  font-family: var(--_font);
+  font-size: 0.6875rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: background .12s;
+  min-height: 1.75rem;
+}
+.btn-teams-sm:hover { background: #eeeef8; }
+.btn-teams-sm:disabled { border-color: var(--_border); color: var(--_text2); cursor: not-allowed; background: transparent; }
+.btn-teams-sm:focus-visible { outline: 2px solid #5b5ea6; outline-offset: 2px; }
+
+/* Teams button in hero */
+.btn-teams {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: var(--_r); border: 1px solid rgba(255,255,255,.3);
+  background: rgba(255,255,255,.12); color: #fff;
+  font-family: var(--_font);
+  font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: background .12s; text-decoration: none;
+  white-space: nowrap;
+}
+.btn-teams:hover { background: rgba(255,255,255,.22); }
+.btn-teams svg { flex-shrink: 0; }
+
+/* P1 Chart */
+.p1-chart-card {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 1.125rem 1.125rem 0.875rem;
+}
+.p1-chart-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.p1-chart-title { font-size: 0.875rem; font-weight: 700; color: var(--_text); }
+.p1-chart-sub   { font-size: 0.6875rem; color: var(--_text2); margin-top: 0.125rem; }
+.p1-stat-hero {
+  font-size: 2.25rem; font-weight: 800; color: var(--_text);
+  letter-spacing: -0.06em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.p1-chart-wrap { width: 100%; height: 10rem; position: relative; }
+.p1-chart-wrap svg { width: 100%; height: 100%; overflow: visible; }
+.p1-tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--_text); color: #fff;
+  font-size: 0.6875rem; font-weight: 600;
+  padding: 0.3125rem 0.625rem; border-radius: 0.375rem;
+  white-space: nowrap; opacity: 0;
+  transition: opacity .12s; z-index: 10;
+  transform: translateX(-50%);
+}
+.p1-tooltip.visible { opacity: 1; }
+.p1-chart-footer { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.625rem; }
+.p1-chart-legend-dot {
+  width: 0.625rem; height: 0.625rem; border-radius: 0.1875rem;
+  background: var(--_brand); flex-shrink: 0;
+}
+.p1-chart-legend-label { font-size: 0.6875rem; color: var(--_text2); }
+
+/* ── MODAL ───────────────────────────────────────────── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 900;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .15s;
+}
+.modal-bg.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--sapGroup_ContentBackground, #fff);
+  border-radius: var(--_r);
+  padding: 1.75rem;
+  width: 25rem; max-width: 92vw;
+  box-shadow: 0 0.5rem 2rem rgba(0,0,0,.18);
+  transform: translateY(0.75rem);
+  transition: transform .15s;
+  z-index: 910;
+}
+.modal-bg.open .modal { transform: translateY(0); }
+@media(prefers-reduced-motion:reduce){ .modal-bg,.modal { transition: none; transform: none; } }
+.modal h3 { font-size: var(--sapFontHeader4Size, 1.125rem); font-weight: 700; color: var(--_text); margin-bottom: 0.25rem; }
+.modal p  { font-size: 0.8125rem; color: var(--_text2); margin-bottom: 1.25rem; }
+.modal label {
+  display: block; font-size: 0.75rem; font-weight: 600;
+  color: var(--sapContent_LabelColor, #556b82);
+  margin-bottom: 0.3125rem;
+}
+.modal input, .modal select {
+  width: 100%;
+  border: 1px solid var(--sapField_BorderColor, #8696a9);
+  border-radius: var(--sapField_BorderCornerRadius, var(--_r));
+  padding: 0.5625rem 0.75rem;
+  font-family: var(--_font);
+  font-size: 0.875rem;
+  background: var(--sapField_Background, #fff);
+  color: var(--_text);
+  margin-bottom: 0.875rem;
+  min-height: 2.5rem; appearance: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.modal input:focus, .modal select:focus {
+  outline: 2px solid var(--_focus); outline-offset: 1px;
+  border-color: var(--sapField_Focus_BorderColor, var(--_brand));
+}
+.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+/* ── EMPTY ───────────────────────────────────────────── */
+.empty { text-align: center; padding: 4rem 1.25rem; color: var(--_text2); }
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.empty h3 { font-size: var(--sapFontHeader5Size, 1rem); font-weight: 700; color: var(--_text); margin-bottom: 0.375rem; }
+.empty p { font-size: 0.8125rem; }
+
+/* ── MISC ────────────────────────────────────────────── */
+.queue-content { display: flex; flex-direction: column; gap: 0.625rem; }
+
+/* ── WEEKLY ROSTER ───────────────────────────────────── */
+.roster-wrap {
+  border-top: 1px solid var(--_list-bd);
+  background: var(--_bg);
+  padding: 0.75rem 1rem;
+}
+.roster-label {
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--_text2);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+.roster-grid {
+  display: grid;
+  grid-template-columns: 4rem repeat(5, 1fr);
+  gap: 0.25rem;
+}
+.roster-row-label {
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--_text2);
+  display: flex; align-items: center;
+  padding-right: 0.375rem;
+}
+.roster-day-head {
+  font-size: 0.625rem; font-weight: 700;
+  color: var(--_text2);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: center; padding: 0.25rem 0;
+  background: var(--sapList_TableHeaderBackground, #f5f5f5);
+  border-radius: 0.25rem;
+}
+.roster-sel {
+  appearance: none; -webkit-appearance: none;
+  width: 100%;
+  border: 1px solid var(--_border);
+  border-radius: 0.25rem;
+  padding: 0.25rem 1.25rem 0.25rem 0.375rem;
+  font-family: var(--_font);
+  font-size: 0.6875rem; font-weight: 600;
+  cursor: pointer;
+  background-color: var(--_surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23556b82'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.375rem center;
+  color: var(--_text);
+  min-height: 1.625rem;
+  transition: border-color .12s;
+}
+.roster-sel:focus {
+  outline: 2px solid var(--_focus); outline-offset: 1px;
+  border-color: var(--_brand);
+}
+.roster-sel.has-value {
+  background-color: var(--sapIndicationColor_1_Background, #e8f1fc);
+  color: var(--sapIndicationColor_1_TextColor, #0064d9);
+  border-color: var(--sapIndicationColor_1_BorderColor, #b3d1f5);
+}
+
+/* ── P1 QUEUE NEW LAYOUT ─────────────────────────────── */
+.p1-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.p1-stat-tile {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-top: 3px solid var(--_border);
+  border-radius: var(--_r);
+  padding: 0.875rem 1rem;
+}
+.p1-stat-open     { border-top-color: var(--sapNegativeColor, #b00); }
+.p1-stat-assigned { border-top-color: var(--sapPositiveColor, #188918); }
+.p1-stat-avail    { border-top-color: var(--sapInformativeColor, #0064d9); }
+.p1-stat-num   { font-size: 2rem; font-weight: 800; color: var(--_text); letter-spacing: -0.04em; line-height: 1; margin-bottom: 0.25rem; font-variant-numeric: tabular-nums; }
+.p1-stat-label { font-size: 0.75rem; font-weight: 700; color: var(--_text); text-transform: uppercase; letter-spacing: 0.04em; }
+.p1-stat-sub   { font-size: 0.6875rem; color: var(--_text2); margin-top: 0.125rem; }
+
+.p1-main-row {
+  display: grid;
+  grid-template-columns: 22rem 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media(max-width:68.75rem){ .p1-main-row { grid-template-columns: 1fr; } }
+
+.p1-left-col  { display: flex; flex-direction: column; gap: 0; }
+.p1-right-col { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.p1-panel {
+  background: var(--_surface);
+  border: 1px solid var(--_border);
+  border-radius: var(--_r);
+  overflow: hidden;
+}
+.p1-panel-head {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--_list-bd);
+  background: var(--_list-hdr);
+  flex-wrap: wrap;
+}
+.p1-panel-title { font-size: 0.8125rem; font-weight: 700; color: var(--_text); }
+.p1-panel-count {
+  font-size: 0.6875rem; font-weight: 700;
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+  color: var(--sapIndicationColor_1_TextColor, #0064d9);
+  border: 1px solid var(--sapIndicationColor_1_BorderColor, #b3d1f5);
+  padding: 0.0625rem 0.4375rem; border-radius: 1rem;
+}
+.p1-add-form { display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
+
+/* Unassigned tickets list */
+.p1-unassigned-list { padding: 0.5rem 0; min-height: 3rem; }
+.p1-ticket-row {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--_list-bd);
+  cursor: grab;
+  transition: background .1s;
+}
+.p1-ticket-row:last-child { border-bottom: none; }
+.p1-ticket-row:hover { background: var(--_hover-bg); }
+.p1-ticket-row.dragging { opacity: .35; }
+.p1-ticket-num {
+  font-size: 0.8125rem; font-weight: 700; color: var(--_brand);
+  font-family: "72Mono","Courier New",monospace;
+  flex: 1;
+}
+.p1-ticket-drag-hint { font-size: 0.6875rem; color: var(--_text2); margin-left: auto; }
+.p1-empty-tickets { padding: 1rem 0.875rem; font-size: 0.8125rem; color: var(--_text2); font-style: italic; }
+
+/* Engineer board */
+.eng-board-section { margin-bottom: 0.5rem; }
+.eng-board-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.375rem 0.75rem;
+  background: var(--_list-hdr);
+  border: 1px solid var(--_list-bd);
+  border-radius: var(--_r) var(--_r) 0 0;
+  font-size: 0.75rem; font-weight: 700; color: var(--_text2);
+}
+/* Status-colored section headers */
+.eng-board-section-head.sh-available { background:var(--sapIndicationColor_8_Background,#e3f1e3); color:var(--sapIndicationColor_8_TextColor,#188918); border-color:var(--sapIndicationColor_8_BorderColor,#acd9ac); }
+.eng-board-section-head.sh-ooo       { background:var(--sapIndicationColor_2_Background,#fce8e8); color:var(--sapIndicationColor_2_TextColor,#b00);    border-color:var(--sapIndicationColor_2_BorderColor,#f5b3b3); }
+.eng-board-section-head.sh-qm-am     { background:var(--sapIndicationColor_1_Background,#e8f1fc); color:var(--sapIndicationColor_1_TextColor,#0064d9); border-color:var(--sapIndicationColor_1_BorderColor,#b3d1f5); }
+.eng-board-section-head.sh-qm-pm     { background:var(--sapIndicationColor_3_Background,#f0e8fc); color:var(--sapIndicationColor_3_TextColor,#6a1cb7); border-color:var(--sapIndicationColor_3_BorderColor,#d0b3f5); }
+.eng-board-section-head.sh-chat      { background:var(--sapIndicationColor_4_Background,#e0f5f5); color:var(--sapIndicationColor_4_TextColor,#0e7373); border-color:var(--sapIndicationColor_4_BorderColor,#a3d9d9); }
+.eng-board-section-head.sh-edu       { background:var(--sapIndicationColor_5_Background,#fef0e0); color:var(--sapIndicationColor_5_TextColor,#c14646); border-color:var(--sapIndicationColor_5_BorderColor,#f9c46d); }
+.eng-board-section-head.sh-admin     { background:var(--sapIndicationColor_6_Background,#f5f5f5); color:var(--sapIndicationColor_6_TextColor,#556b82); border-color:var(--sapIndicationColor_6_BorderColor,#c9c9c9); }
+.eng-board-section-head.sh-late      { background:var(--sapIndicationColor_7_Background,#fce8d5); color:var(--sapIndicationColor_7_TextColor,#8c4a00); border-color:var(--sapIndicationColor_7_BorderColor,#f5c9a3); }
+.eng-board-section-head.sh-roster    { background:var(--sapIndicationColor_9_Background,#f5e6f5); color:#6a0a8c; border-color:#d9aad9; }
+.eng-board-section-count { font-size: 0.6875rem; color: inherit; opacity:.75; }
+.eng-board-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--_surface);
+  border: 1px solid var(--_list-bd);
+  border-top: none;
+  border-radius: 0 0 var(--_r) var(--_r);
+}
+.eng-board-card {
+  border: 1px solid var(--_border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--_surface);
+  cursor: default;
+  transition: background .1s;
+  min-height: 3.25rem;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.eng-board-card.is-drop-target {
+  border-color: var(--_brand);
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+}
+.eng-board-card.is-ooo { opacity: .5; }
+.eng-board-name { font-size: 0.8125rem; font-weight: 600; color: var(--_text); }
+.eng-board-name.ooo-name { color: var(--sapNegativeColor, #b00); text-decoration: line-through; }
+.eng-board-tickets { display: flex; flex-wrap: wrap; gap: 0.1875rem; margin-top: 0.25rem; }
+.eng-board-ticket {
+  font-size: 0.625rem; font-weight: 700;
+  background: var(--sapIndicationColor_1_Background, #e8f1fc);
+  color: var(--_brand);
+  border: 1px solid var(--sapIndicationColor_1_BorderColor, #b3d1f5);
+  padding: 0.0625rem 0.375rem; border-radius: 1rem;
+  cursor: grab; user-select: none;
+  display: flex; align-items: center; gap: 0.1875rem;
+}
+.eng-board-ticket.dragging { opacity: .3; }
+.eng-board-ticket .del { opacity: .5; cursor: pointer; font-size: 0.625rem; }
+.eng-board-ticket .del:hover { opacity: 1; }
+
+.log-summary-row {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--_list-bd);
+  transition: background .1s;
+}
+.log-summary-row:last-child { border-bottom: none; }
+.log-summary-row:hover { background: var(--_hover-bg); }
+.log-summary-av {
+  width: 1.75rem; height: 1.75rem; min-width: 1.75rem;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.625rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.log-summary-name { font-weight: 600; color: var(--_text); font-size: 0.8125rem; flex: 1; }
+.log-summary-tickets { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.log-summary-ticket {
+  font-size: 0.6875rem; font-weight: 700;
+  background: var(--sapIndicationColor_1_Background,#e8f1fc);
+  color: var(--_brand);
+  border: 1px solid var(--sapIndicationColor_1_BorderColor,#b3d1f5);
+  padding: 0.0625rem 0.375rem; border-radius: 1rem;
+}
+.log-summary-count {
+  font-size: 0.6875rem; font-weight: 700;
+  background: var(--_text); color: #fff;
+  padding: 0.125rem 0.5rem; border-radius: 1rem;
+  flex-shrink: 0;
+}
+.log-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.log-th { background: var(--sapList_TableHeaderBackground, #f5f5f5); border-bottom: 1px solid var(--_list-bd); padding: 0.4375rem 0.875rem; text-align: left; font-size: 0.6875rem; font-weight: 700; color: var(--_text2); text-transform: uppercase; letter-spacing: 0.04em; }
+.log-td { padding: 0.5rem 0.875rem; border-bottom: 1px solid var(--_list-bd); vertical-align: middle; }
+.log-tr:last-child .log-td { border-bottom: none; }
+.log-time { font-size: 0.6875rem; color: var(--_text2); white-space: nowrap; }
+.log-ticket { font-weight: 700; color: var(--_brand); font-family: "72Mono","Courier New",monospace; }
+.log-eng { font-weight: 600; color: var(--_text); }
+
+@media(max-width:40rem){
+  main { padding: 0.875rem; }
+  .shell { padding: 0 0.875rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- SHELL BAR -->
+<header class="shell">
+  <div class="shell-brand">
+    <div class="shell-logo">VH</div>
+    <div>
+      <div class="shell-title">Dispatch Core</div>
+      <div class="shell-sub">Queue Manager</div>
+    </div>
+  </div>
+
+  <nav class="shell-tabs" role="tablist">
+    <button class="shell-tab active" data-tab="schedule" role="tab" aria-selected="true">Schedule</button>
+    <button class="shell-tab"        data-tab="queue"    role="tab" aria-selected="false">P1 Queue</button>
+  </nav>
+
+  <div class="shell-right">
+    <div class="week-chip">
+      <div class="live-dot"></div>
+      <span id="weekLabel">—</span>
+    </div>
+    <button class="shell-btn" onclick="openWeekModal()">+ Week</button>
+    <button class="shell-btn" onclick="openEngModal()">+ Engineer</button>
+    <button class="shell-btn" onclick="openRccModal()" style="background:rgba(240,171,0,.2);border-color:rgba(240,171,0,.5)" title="Import schedule from RCC">&#x21A9; RCC Import</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ TAB: SCHEDULE ══════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-schedule" role="tabpanel">
+    <div class="page-hdr">
+      <h2>Week Schedule</h2>
+    </div>
+    <div id="scheduleContent">
+      <div class="empty"><div class="empty-icon">📋</div><h3>No schedule</h3><p>Click <strong>+ Week</strong> to create one.</p></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: P1 QUEUE ══════════════════════════════════ -->
+  <div class="tab-panel" id="panel-queue" role="tabpanel">
+
+    <!-- Stat tiles row -->
+    <div class="p1-stat-row" id="p1StatRow">
+      <div class="p1-stat-tile p1-stat-open">
+        <div class="p1-stat-num" id="statOpen">0</div>
+        <div class="p1-stat-label">Open P1 Tickets</div>
+        <div class="p1-stat-sub">Waiting for assignment</div>
+      </div>
+      <div class="p1-stat-tile p1-stat-assigned">
+        <div class="p1-stat-num" id="statAssigned">0</div>
+        <div class="p1-stat-label">Assigned Today</div>
+        <div class="p1-stat-sub">Tickets distributed</div>
+      </div>
+      <div class="p1-stat-tile p1-stat-avail">
+        <div class="p1-stat-num" id="statAvail">0</div>
+        <div class="p1-stat-label">Available Engineers</div>
+        <div class="p1-stat-sub">Active (non-OOO)</div>
+      </div>
+    </div>
+
+    <!-- Main content: queue left, board right -->
+    <div class="p1-main-row">
+
+      <!-- Left: input bar + chart + log -->
+      <div class="p1-left-col">
+
+        <!-- Slim input bar — no queue list -->
+        <div class="assign-bar" style="margin-bottom:0.75rem">
+          <div class="assign-bar-inner">
+            <div class="assign-fields">
+              <input class="queue-input" id="ticketInput" placeholder="P1 ticket number…" onkeydown="if(event.key==='Enter')assignP1()">
+              <select class="day-sel" id="queueDaySel" onchange="queueDay=this.value;renderQueue()" style="min-width:6rem"></select>
+            </div>
+            <button class="btn btn-primary" onclick="assignP1()" style="white-space:nowrap">+ Assign to Next</button>
+          </div>
+          <div class="assign-next-hint" id="assignNextHint" style="margin-top:0.375rem">—</div>
+        </div>
+
+        <!-- Chart -->
+        <div class="p1-chart-card" style="margin-top:1rem">
+          <div class="p1-chart-head">
+            <div>
+              <div class="p1-chart-title">P1 Load — Today</div>
+              <div class="p1-chart-sub" id="p1ChartDate"></div>
+            </div>
+            <div class="p1-stat-hero" id="p1TotalHero">0</div>
+          </div>
+          <div class="p1-chart-wrap" id="p1ChartWrap" aria-label="P1 tickets per hour today"></div>
+          <div class="p1-chart-footer">
+            <span class="p1-chart-legend-dot"></span>
+            <span class="p1-chart-legend-label">tickets assigned</span>
+          </div>
+        </div>
+
+        <!-- Assignment Log -->
+        <div class="p1-panel" style="margin-top:1rem">
+          <div class="p1-panel-head">
+            <span class="p1-panel-title">Assignment Log</span>
+            <span class="p1-panel-count" id="logCount">0</span>
+          </div>
+          <!-- Engineer summary rows -->
+          <div id="logSummary" style="border-bottom:1px solid var(--_list-bd)"></div>
+          <!-- Next up hint -->
+          <div id="logNextUp" style="padding:0.5rem 0.875rem;font-size:0.75rem;color:var(--_text2);background:var(--sapIndicationColor_8_Background,#e3f1e3);border-bottom:1px solid var(--sapIndicationColor_8_BorderColor,#acd9ac);display:none"></div>
+          <!-- Chronological entries -->
+          <table class="log-table">
+            <thead><tr>
+              <th class="log-th">Time</th>
+              <th class="log-th">Ticket</th>
+              <th class="log-th">Assigned To</th>
+            </tr></thead>
+            <tbody id="logBody"><tr><td class="log-td" colspan="3" style="text-align:center;color:var(--_text2)">No assignments yet</td></tr></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Right: engineer status board grouped by status -->
+      <div class="p1-right-col" id="engBoard"></div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- WEEK MODAL -->
+<div class="modal-bg" id="weekModal" role="dialog" aria-modal="true" aria-labelledby="weekModalTitle">
+  <div class="modal">
+    <h3 id="weekModalTitle">New Week Schedule</h3>
+    <p>Enter the calendar week (Austrian ISO standard).</p>
+    <label for="inputWeek">Week Number</label>
+    <input type="number" id="inputWeek" min="1" max="53" placeholder="e.g. 28">
+    <label for="inputYear">Year</label>
+    <input type="number" id="inputYear" min="2021" max="2099" placeholder="e.g. 2026">
+    <div class="modal-actions">
+      <button class="btn btn-default" onclick="closeWeekModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createWeek()">Create Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENGINEER MODAL -->
+<div class="modal-bg" id="engModal" role="dialog" aria-modal="true" aria-labelledby="engModalTitle">
+  <div class="modal">
+    <h3 id="engModalTitle">Add Engineer</h3>
+    <p>Added to Core team and P1 queue.</p>
+    <label for="engName">Full Name</label>
+    <input type="text" id="engName" placeholder="e.g. Max Mustermann">
+    <label for="engId">User ID</label>
+    <input type="text" id="engId" placeholder="e.g. I123456">
+    <label for="engEmail">SAP E-Mail (für Teams)</label>
+    <input type="email" id="engEmail" placeholder="e.g. max.mustermann@sap.com">
+    <label for="engTeam">Team</label>
+    <select id="engTeam">
+      <option value="IE">IE</option><option value="AT">AT</option>
+      <option value="DE">DE</option><option value="IN">IN</option><option value="HU">HU</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-default" onclick="closeEngModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addEngineer()">Add Engineer</button>
+    </div>
+  </div>
+</div>
+
+<!-- RCC IMPORT MODAL -->
+<div class="modal-bg" id="rccModal" role="dialog" aria-modal="true" aria-labelledby="rccModalTitle">
+  <div class="modal" style="width:480px">
+    <h3 id="rccModalTitle">&#x21A9; Import from RCC</h3>
+    <p>The app will fetch the schedule directly from RCC using your active session. Make sure you are logged into RCC in this browser.</p>
+    <div id="rccImportStatus" style="font-size:0.8125rem;margin-bottom:0.875rem;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-default" onclick="closeRccModal()">Cancel</button>
+      <button class="btn btn-primary" id="rccImportBtn" onclick="importFromRcc()">&#x21A9; Fetch from RCC</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000/api/data'
+  : 'https://qm-schedule-backend.cfapps.us10-001.hana.ondemand.com/api/data';
+
+const STATUS_OPTIONS = [
+  {value:'',          label:'—',         selCls:''},
+  {value:'available', label:'Available', selCls:'sel-available'},
+  {value:'ooo',       label:'OOO',       selCls:'sel-ooo'},
+  {value:'qm-am',     label:'QM AM',     selCls:'sel-qm-am'},
+  {value:'qm-pm',     label:'QM PM',     selCls:'sel-qm-pm'},
+  {value:'chat-am',   label:'Chat AM',   selCls:'sel-chat-am'},
+  {value:'chat-pm',   label:'Chat PM',   selCls:'sel-chat-pm'},
+  {value:'edu',       label:'EDU',       selCls:'sel-edu'},
+  {value:'admin',     label:'Admin',     selCls:'sel-admin'},
+  {value:'mentoring', label:'Mentoring', selCls:'sel-mentoring'},
+  {value:'project',   label:'Project',   selCls:'sel-project'},
+  {value:'late',      label:'Late',      selCls:'sel-late'},
+  {value:'km',        label:'KM',        selCls:'sel-km'},
+  {value:'ooo-km',    label:'OOO/KM',    selCls:'sel-ooo-km'},
+];
+const SM = Object.fromEntries(STATUS_OPTIONS.map(o=>[o.value,o]));
+const OOO = new Set(['ooo','ooo-km']);
+
+const TEAM_COLORS = {
+  IE:'#3B82F6', AT:'#D97706', DE:'#6366F1',
+  IN:'#10B981', HU:'#EF4444'
+};
+const ENG_COLORS = ['#3B82F6','#D97706','#6366F1','#10B981','#EF4444','#8B5CF6','#F59E0B','#06B6D4','#EC4899','#84CC16'];
+
+// ── STATE ──────────────────────────────────────────────
+let weeks = {};
+let activeWeek = null;
+let coreEngineers = [
+  {name:'Andrew Byrne',     id:'I543015', team:'IE', email:''},
+  {name:'Caroline Maitz',   id:'I517389', team:'AT', email:''},
+  {name:'Ercin Nurol',      id:'D055131', team:'DE', email:''},
+  {name:'FOCUS Engineer',   id:'—',       team:'DE', email:''},
+  {name:'Gaurav Jowhry',    id:'I063610', team:'IN', email:''},
+  {name:'Marcus Luz',       id:'D055098', team:'DE', email:'filip.adamovic@sap.com'},
+  {name:'Sachin Dev',       id:'I343963', team:'IE', email:''},
+  {name:'Salome Szanto',    id:'I072459', team:'HU', email:''},
+  {name:'Simon Forde',      id:'I337233', team:'IE', email:''},
+  {name:'TechM Engineer',   id:'—',       team:'IN', email:''},
+];
+const VH_ENGINEERS = [
+  {name:'Hatem Bellahouel',    id:'C5356355'},
+  {name:'Mahmoud Arouri',      id:'C5349109'},
+  {name:'Abderahman Naouar',   id:'C5369677'},
+  {name:'Badreddine Meghirbi', id:'C5349247'},
+  {name:'Wejden Messaoud',     id:'C5360785'},
+  {name:'Ekbel Chelbi',        id:'C5405189'},
+  {name:'Eya Ferchichi',       id:'C5405144'},
+  {name:'Mohamed Malek Riahi', id:'C5368263'},
+];
+const VH_AM_ENGINEERS = [
+  {name:'Aravind Vanga',       id:'C5354043'},
+  {name:'Harsh Sawaji',        id:'C5380791'},
+  {name:'Bandish Patil',       id:'C5309224'},
+  {name:'Pratik Kumbhkar',     id:'C5389321'},
+  {name:'Ruchita P. Rudrawar', id:'C5284326'},
+  {name:'Pavan Kumar Donka',   id:'C5351638'},
+  {name:'Kritesh Carpenter',   id:'C5380794'},
+  {name:'Sitesh Sinha',        id:'C5244536'},
+  {name:'Himanshu Mishra',     id:'C5389322'},
+];
+
+let rr = {pointer:0, entries:[]};
+let p1Log = {};
+let assignLog = []; // [{time, ticket, engName}]
+let queueDay = DAYS[0];
+// roster[weekKey][prefix][slot][day] = engineerName
+// prefix: 'vh' or 'vham', slot: 'qm' (VH) or 'am'/'pm' (VH AM)
+let roster = {};
+let todayDay = DAYS[0];
+let _dragFromEntry = -1, _dragFromTicket = -1;
+let _lastHash = '';
+let _isEditing = false;
+
+// ── HELPERS ────────────────────────────────────────────
+function initials(name){ return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(); }
+function engColor(i){ return ENG_COLORS[i % ENG_COLORS.length]; }
+function weekKey(w,y){ return 'W'+w+'-'+y; }
+
+function getViennaDate(){
+  const now = new Date();
+  const str = now.toLocaleDateString('en-CA', {timeZone:'Europe/Vienna'});
+  const p = str.split('-');
+  return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+}
+function getISOWeek(date){
+  const d = new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const day = d.getUTCDay()||7;
+  d.setUTCDate(d.getUTCDate()+4-day);
+  const y = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d-y)/86400000)+1)/7);
+}
+function getWeekRange(w,y){
+  const jan4 = new Date(Date.UTC(y,0,4));
+  const dow = jan4.getUTCDay()||7;
+  const mon = new Date(jan4); mon.setUTCDate(jan4.getUTCDate()-dow+1+(w-1)*7);
+  const fri = new Date(mon); fri.setUTCDate(mon.getUTCDate()+4);
+  const fmt = d => d.toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',timeZone:'UTC'});
+  return fmt(mon)+' – '+fmt(fri);
+}
+function getStatus(prefix, i, day){
+  if(!activeWeek||!weeks[activeWeek]) return '';
+  return weeks[activeWeek].statuses[prefix+'_'+i+'_'+day]||'';
+}
+function setStatus(prefix, i, day, val){
+  if(!activeWeek||!weeks[activeWeek]) return;
+  weeks[activeWeek].statuses[prefix+'_'+i+'_'+day] = val;
+}
+function statusChip(val){
+  if(!val) return '<span class="sc sc-none">—</span>';
+  return '<span class="sc sc-'+val+'">'+(SM[val]?.label||val)+'</span>';
+}
+
+// ── TABS ───────────────────────────────────────────────
+document.querySelectorAll('.shell-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.shell-tab').forEach(t=>{ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='queue'){ renderQueue(); renderP1Chart(); }
+  });
+});
+
+// ── WEEK MODAL ─────────────────────────────────────────
+function openWeekModal(){
+  const v = getViennaDate();
+  document.getElementById('inputWeek').value = getISOWeek(v);
+  document.getElementById('inputYear').value = v.getFullYear();
+  document.getElementById('weekModal').classList.add('open');
+  document.getElementById('inputWeek').focus();
+}
+function closeWeekModal(){ document.getElementById('weekModal').classList.remove('open'); }
+
+function createWeek(){
+  const w = parseInt(document.getElementById('inputWeek').value);
+  const y = parseInt(document.getElementById('inputYear').value);
+  if(!w||w<1||w>53||!y||y<2021){ alert('Enter a valid week (1-53) and year.'); return; }
+  const key = weekKey(w,y);
+  if(!weeks[key]) weeks[key] = {week:w,year:y,statuses:{}};
+  closeWeekModal();
+  setActiveWeek(key);
+  save();
+}
+function setActiveWeek(key){
+  activeWeek = key;
+  const w = weeks[key];
+  document.getElementById('weekLabel').textContent = 'KW '+w.week+' / '+w.year+' · '+getWeekRange(w.week,w.year);
+  renderAll();
+}
+
+// ── ENG MODAL ──────────────────────────────────────────
+function openEngModal(){
+  document.getElementById('engName').value='';
+  document.getElementById('engId').value='';
+  document.getElementById('engModal').classList.add('open');
+  document.getElementById('engName').focus();
+}
+function closeEngModal(){ document.getElementById('engModal').classList.remove('open'); }
+
+function addEngineer(){
+  const name  = document.getElementById('engName').value.trim();
+  const id    = document.getElementById('engId').value.trim()||'—';
+  const email = document.getElementById('engEmail').value.trim()||'';
+  const team  = document.getElementById('engTeam').value;
+  if(!name){ document.getElementById('engName').focus(); return; }
+  coreEngineers.push({name,id,team,email});
+  syncRR();
+  closeEngModal();
+  save();
+  renderAll();
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape'){ closeWeekModal(); closeEngModal(); closeRccModal(); }
+});
+
+// ── RCC IMPORT ─────────────────────────────────────────
+// Maps RCC ActivityTypeID / Code to our status values
+// Case-insensitive lookup helper
+function rccMap(str){
+  if(!str) return '';
+  const s = str.trim().toLowerCase();
+  const MAP = {
+    // Available
+    'available':              'available',
+    'case handling':          'available',
+    'ireland day shift':      'available',
+    'ids':                    'available',
+    'day shift':              'available',
+    'online':                 'available',
+    // OOO
+    'ooo':                    'ooo',
+    'out of office':          'ooo',
+    'absent hr':              'ooo',
+    'absent':                 'ooo',
+    'absence':                'ooo',
+    'holiday':                'ooo',
+    'public holiday':         'ooo',
+    'sick':                   'ooo',
+    'sick leave':             'ooo',
+    'parental leave':         'ooo',
+    // QM — will be split AM/PM by time later
+    'queue manager am':       'qm-am',
+    'queue manager pm':       'qm-pm',
+    'qm am':                  'qm-am',
+    'qm pm':                  'qm-pm',
+    'queue manager':          'qm-am',  // split by time below
+    'qmg':                    'qm-am',  // RCC code for Queue Manager
+    // Chat
+    'chat am':                'chat-am',
+    'chat pm':                'chat-pm',
+    // EDU
+    'edu':                    'edu',
+    'education':              'edu',
+    'training education':     'edu',
+    'training':               'edu',
+    'fellowship':             'edu',
+    // Admin
+    'admin':                  'admin',
+    'administration':         'admin',
+    // Mentoring
+    'mentoring':              'mentoring',
+    // Project
+    'project':                'project',
+    // Late
+    'late':                   'late',
+    // KM
+    'km':                     'km',
+    'knowledge management':   'km',
+    // OOO+KM
+    'ooo/km':                 'ooo-km',
+  };
+  return MAP[s] || '';
+}
+
+const RCC_CODE_MAP = {}; // kept for compat, logic now uses rccMap()
+
+// Map RCC UserID to our engineer index in coreEngineers
+function findEngByUserId(uid){
+  return coreEngineers.findIndex(e => e.id === uid);
+}
+
+// Get ISO week day name from a date string like "2026-07-14T07:00:00"
+function dayNameFromDate(dateStr){
+  const d = new Date(dateStr);
+  // Use Vienna timezone day-of-week
+  const dow = parseInt(d.toLocaleDateString('en-US',{weekday:'long',timeZone:'Europe/Vienna'}).split(',')[0]);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const name = d.toLocaleDateString('en-US',{weekday:'long',timeZone:'Europe/Vienna'});
+  return name; // e.g. "Monday"
+}
+
+function openRccModal(){
+  document.getElementById('rccImportStatus').style.display='none';
+  document.getElementById('rccModal').classList.add('open');
+}
+function closeRccModal(){ document.getElementById('rccModal').classList.remove('open'); }
+
+function buildRccUrl(){
+  if(!activeWeek) return null;
+  const wk=weeks[activeWeek];
+  const jan4=new Date(Date.UTC(wk.year,0,4));
+  const dow=jan4.getUTCDay()||7;
+  const monday=new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate()-dow+1+(wk.week-1)*7);
+  const from=new Date(monday); from.setUTCDate(monday.getUTCDate()-1);
+  const to=new Date(monday);   to.setUTCDate(monday.getUTCDate()+8);
+  const uids=coreEngineers.map(e=>e.id).filter(id=>id&&id!=='--').join(',');
+  const myUid=coreEngineers.find(e=>e.email&&e.email.includes('filip'))?.id||uids.split(',')[0];
+  return 'https://rcc.mo.sap.corp/services/rccapi/WebService.asmx/GetActivities'
+    +'?uid='+myUid+'&tid=0&oid=0&uids='+uids
+    +'&from='+from.toISOString()+'&to='+to.toISOString();
+}
+function importFromRcc(){
+  const statusEl=document.getElementById('rccImportStatus');
+  const btn=document.getElementById('rccImportBtn');
+  statusEl.style.display='block';
+  if(!activeWeek){statusEl.innerHTML='<span style="color:#b00">No active week.</span>';return;}
+
+  // Build the bookmarklet command for the user to run on the RCC page
+  const wk=weeks[activeWeek];
+  const jan4=new Date(Date.UTC(wk.year,0,4));
+  const dow=jan4.getUTCDay()||7;
+  const monday=new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate()-dow+1+(wk.week-1)*7);
+  const from=new Date(monday); from.setUTCDate(monday.getUTCDate()-1);
+  const to=new Date(monday);   to.setUTCDate(monday.getUTCDate()+8);
+  const uids=coreEngineers.map(e=>e.id).filter(id=>id&&id!=='—').join(',');
+  const rccApiUrl='https://rcc.mo.sap.corp/services/rccapi/WebService.asmx/GetActivities?uid=I342325&tid=0&oid=0&uids='+uids+'&from='+from.toISOString()+'&to='+to.toISOString();
+  const backendUrl=(location.hostname==='localhost'||location.hostname==='127.0.0.1')
+    ? 'http://localhost:3000/api/rcc-import'
+    : 'https://qm-schedule-backend.cfapps.us10-001.hana.ondemand.com/api/rcc-import';
+
+  const cmd=`fetch('${rccApiUrl}',{headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},credentials:'include'}).then(r=>r.json()).then(d=>fetch('${backendUrl}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})).then(()=>alert('✓ Sent to QM App!'))`;
+
+  statusEl.innerHTML=`
+    <div style="margin-bottom:0.75rem;font-size:0.8125rem;color:var(--_text)">
+      <strong>Step 1:</strong> Open RCC in this browser and log in.<br>
+      <strong>Step 2:</strong> Press F12 → Console → paste the command below → Enter.<br>
+      <strong>Step 3:</strong> When you see "Sent to QM App!" come back here and click <em>Check for Import</em>.
+    </div>
+    <textarea style="width:100%;height:5rem;font-size:0.6875rem;font-family:monospace;border:1px solid var(--_border);border-radius:0.375rem;padding:0.5rem;resize:none" onclick="this.select()">${cmd}</textarea>`;
+
+  if(btn){ btn.textContent='↻ Check for Import'; btn.onclick=pollRccImport; btn.disabled=false; }
+}
+
+function pollRccImport(){
+  const statusEl=document.getElementById('rccImportStatus');
+  const btn=document.getElementById('rccImportBtn');
+  const backendUrl=(location.hostname==='localhost'||location.hostname==='127.0.0.1')
+    ? 'http://localhost:3000/api/rcc-import'
+    : 'https://qm-schedule-backend.cfapps.us10-001.hana.ondemand.com/api/rcc-import';
+
+  if(btn) btn.disabled=true;
+  statusEl.innerHTML+='<div style="margin-top:0.5rem;font-size:0.8125rem;color:var(--_text2)">Checking...</div>';
+
+  fetch(backendUrl)
+    .then(r=>r.json())
+    .then(res=>{
+      if(!res.ready){
+        statusEl.innerHTML+='<div style="color:#b00;font-size:0.8125rem">No data yet. Run the console command on the RCC page first.</div>';
+        if(btn) btn.disabled=false;
+        return;
+      }
+      processRccData(res.data, statusEl, btn);
+      if(btn){ btn.textContent='↩ Fetch from RCC'; btn.onclick=importFromRcc; }
+    })
+    .catch(()=>{
+      statusEl.innerHTML+='<div style="color:#b00;font-size:0.8125rem">Could not reach backend.</div>';
+      if(btn) btn.disabled=false;
+    });
+}
+function processRccData(data,statusEl,btn){
+  if(!Array.isArray(data)){statusEl.innerHTML='<span style="color:#b00">Unexpected format.</span>';if(btn)btn.disabled=false;return;}
+  const wkData=weeks[activeWeek];
+  const jan4=new Date(Date.UTC(wkData.year,0,4));
+  const dow=jan4.getUTCDay()||7;
+  const monday=new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate()-dow+1+(wkData.week-1)*7);
+  const dateToDay={};
+  DAYS.forEach((d,i)=>{const dd=new Date(monday);dd.setUTCDate(monday.getUTCDate()+i);dateToDay[dd.toISOString().slice(0,10)]=d;});
+  const weekDates=new Set(Object.keys(dateToDay));
+  let matched=0,skipped=0;
+  data.forEach(item=>{
+    const uid=item?.User?.UserID;
+    if(!uid){skipped++;return;}
+    const ei=findEngByUserId(uid);
+    if(ei===-1){skipped++;return;}
+    matched++;
+    const dayActs={};
+    (item?.Activities||[]).forEach(act=>{
+      const ds=(act.Day||act.StartDate||'').slice(0,10);
+      if(!weekDates.has(ds))return;
+      const dn=dateToDay[ds];if(!dn)return;
+      const m=rccMap((act.Code||'').trim())||rccMap((act.ActivityTypeID||'').trim())||rccMap((act.ActivityTitle||'').trim());
+      if(!m)return;
+      const h=act.StartDate?new Date(act.StartDate).getUTCHours():0;
+      if(!dayActs[dn])dayActs[dn]=[];
+      dayActs[dn].push({mapped:m,hour:h});
+    });
+    DAYS.forEach(dn=>{
+      const acts=dayActs[dn]||[];
+      let st='available';
+      if(acts.length>0){
+        const ooo=acts.find(a=>a.mapped==='ooo'||a.mapped==='ooo-km');
+        if(ooo){st=ooo.mapped;}
+        else{
+          const qm=acts.filter(a=>a.mapped==='qm-am'||a.mapped==='qm-pm');
+          if(qm.length>0){
+            const am=qm.some(a=>a.hour<11),pm=qm.some(a=>a.hour>=11);
+            st=(am&&pm)?'qm-am':am?'qm-am':'qm-pm';
+          } else {
+            const pri=['ooo-km','ooo','qm-pm','qm-am','chat-pm','chat-am','edu','mentoring','project','admin','km','late'];
+            st=[...acts].sort((a,b)=>pri.indexOf(a.mapped)-pri.indexOf(b.mapped))[0].mapped;
+          }
+        }
+      }
+      wkData.statuses['core_'+ei+'_'+dn]=st;
+    });
+  });
+  save();renderSchedule();renderQueue();
+  if(statusEl)statusEl.innerHTML='<span style="color:#188918">Done: '+matched+' engineers imported, '+skipped+' skipped.</span>';
+  if(btn)btn.disabled=false;
+}
+
+// ── SCHEDULE TAB ───────────────────────────────────────
+// ── WEEKLY ROSTER ──────────────────────────────────────
+function getRosterKey(prefix, slot, day){
+  return (activeWeek||'') + '|' + prefix + '|' + slot + '|' + day;
+}
+function getRosterVal(prefix, slot, day){
+  if(!roster[activeWeek]) return '';
+  return (roster[activeWeek][prefix]?.[slot]?.[day]) || '';
+}
+function setRosterVal(prefix, slot, day, val){
+  if(!activeWeek) return;
+  if(!roster[activeWeek]) roster[activeWeek] = {};
+  if(!roster[activeWeek][prefix]) roster[activeWeek][prefix] = {};
+  if(!roster[activeWeek][prefix][slot]) roster[activeWeek][prefix][slot] = {};
+  roster[activeWeek][prefix][slot][day] = val;
+}
+
+function buildRosterBlock(engineers, prefix, slots){
+  // slots = [{key:'qm',label:'QM'}] for VH, [{key:'am',label:'AM'},{key:'pm',label:'PM'}] for VH AM
+  const names = engineers.map(e=>e.name);
+  const dayHeads = DAYS.map(d=>`<div class="roster-day-head">${d.slice(0,3)}</div>`).join('');
+
+  const rows = slots.map(slot=>{
+    const cells = DAYS.map(day=>{
+      const val = getRosterVal(prefix, slot.key, day);
+      const opts = ['<option value="">—</option>']
+        .concat(names.map(n=>`<option value="${n}"${n===val?' selected':''}>${n.split(' ')[0]}</option>`))
+        .join('');
+      return `<select class="roster-sel${val?' has-value':''}"
+        onchange="onRosterChange(this,'${prefix}','${slot.key}','${day}')"
+        aria-label="${slot.label} ${day}">${opts}</select>`;
+    }).join('');
+    return `<div class="roster-row-label">${slot.label}</div>${cells}`;
+  }).join('');
+
+  return `<div class="roster-wrap">
+    <div class="roster-label">P1 VH Availability — Week ${activeWeek ? weeks[activeWeek]?.week : '?'}</div>
+    <div class="roster-grid">
+      <div></div>${dayHeads}
+      ${rows}
+    </div>
+  </div>`;
+}
+
+function onRosterChange(sel, prefix, slot, day){
+  setRosterVal(prefix, slot, day, sel.value);
+  sel.className = 'roster-sel' + (sel.value ? ' has-value' : '');
+  save();
+}
+
+// Simple table — just name + ID list, no day dropdowns, + P1 roster at bottom
+function buildSimpleTable(engineers, prefix, label){
+  const rows = engineers.map(eng=>`
+    <tr class="sched-tr">
+      <td class="sched-td">
+        <div class="eng-cell">
+          <div class="av" style="background:#6366F1;width:1.75rem;height:1.75rem;font-size:0.625rem">${initials(eng.name)}</div>
+          <div>
+            <div class="eng-name">${eng.name}</div>
+            <div class="eng-id">${eng.id}</div>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  const slots = prefix === 'vh'
+    ? [{key:'vh', label:'VH'}]
+    : [{key:'am', label:'VH AM'},{key:'pm', label:'VH PM'}];
+
+  const rosterBlock = buildRosterBlock(engineers, prefix, slots);
+
+  return `<div class="fi-table-card">
+    <div class="fi-table-card-header">${label} <span style="font-weight:400;text-transform:none;letter-spacing:0;margin-left:0.25rem;opacity:.7">${engineers.length} engineers</span></div>
+    <div style="overflow-x:auto">
+      <table class="sched-table">
+        <thead><tr><th class="sched-th">Engineer</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${rosterBlock}
+  </div>`;
+}
+
+function renderSchedule(){
+  const el = document.getElementById('scheduleContent');
+  if(!activeWeek||!weeks[activeWeek]){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><h3>No schedule</h3><p>Click <strong>+ Week</strong> to create one.</p></div>';
+    return;
+  }
+  const data = weeks[activeWeek];
+
+  [{prefix:'core',engineers:coreEngineers},{prefix:'vh',engineers:VH_ENGINEERS},{prefix:'vham',engineers:VH_AM_ENGINEERS}]
+    .forEach(({prefix,engineers}) => {
+      engineers.forEach((_,i) => DAYS.forEach(day => {
+        const k = prefix+'_'+i+'_'+day;
+        if(!(k in data.statuses)) data.statuses[k]='';
+      }));
+    });
+
+  const buildTable = (engineers, prefix, label, showTeam) => {
+    const dayCols = DAYS.map(d=>`<th class="sched-th ctr">${d.slice(0,3)}</th>`).join('');
+    const teamCol = showTeam ? '<th class="sched-th" style="width:4rem">Team</th>' : '';
+    const rows = engineers.map((eng,i)=>{
+      const color = showTeam?(TEAM_COLORS[eng.team]||'#64748B'):'#6366F1';
+      const ini = initials(eng.name);
+      const teamBadge = showTeam&&eng.team
+        ? `<span class="tb" style="background:${TEAM_COLORS[eng.team]}22;color:${TEAM_COLORS[eng.team]}">${eng.team}</span>` : '';
+      const dayCells = DAYS.map(day=>{
+        const k = prefix+'_'+i+'_'+day;
+        const val = data.statuses[k]||'';
+        const opts = STATUS_OPTIONS.map(o=>`<option value="${o.value}"${o.value===val?' selected':''}>${o.label}</option>`).join('');
+        const selCls = SM[val]?.selCls||'';
+        const bg = val ? 'background:var(--st-'+val.replace(/-/g,'')+'_bg,transparent)' : '';
+        return `<td class="sched-td ctr">
+          <select class="status-sel ${selCls}" aria-label="${eng.name} ${day}"
+            onchange="onScheduleChange(this,'${prefix}',${i},'${day}')">
+            ${opts}
+          </select>
+        </td>`;
+      }).join('');
+      return `<tr class="sched-tr">
+        <td class="sched-td" style="min-width:13.75rem">
+          <div class="eng-cell">
+            <div class="av" style="background:${color};width:1.75rem;height:1.75rem;font-size:0.625rem">${ini}</div>
+            <div>
+              <div class="eng-name">${eng.name}</div>
+              <div class="eng-id">${eng.id}</div>
+            </div>
+          </div>
+        </td>
+        ${showTeam?`<td class="sched-td">${teamBadge}</td>`:''}
+        ${dayCells}
+      </tr>`;
+    }).join('');
+
+    const qmBoxes = DAYS.map(day=>{
+      let am='—', pm='—';
+      engineers.forEach((eng,i)=>{
+        const v = data.statuses[prefix+'_'+i+'_'+day]||'';
+        if(v==='qm-am') am=eng.name.split(' ')[0];
+        if(v==='qm-pm') pm=eng.name.split(' ')[0];
+      });
+      const has = am!=='—'||pm!=='—';
+      return `<div class="qm-day${has?' has-qm':''}">
+        <div class="qm-day-name">${day.slice(0,3)}</div>
+        <div class="qm-slot"><span class="qm-slot-label am">AM</span><span class="qm-who${am!=='—'?' set':''}">${am}</span></div>
+        <div class="qm-slot"><span class="qm-slot-label pm">PM</span><span class="qm-who${pm!=='—'?' set-pm':''}">${pm}</span></div>
+      </div>`;
+    }).join('');
+
+    // Roster block (only for VH and VH AM)
+    let rosterBlock = '';
+    if(prefix === 'vh'){
+      rosterBlock = buildRosterBlock(engineers, 'vh', [{key:'vh', label:'VH'}]);
+    } else if(prefix === 'vham'){
+      rosterBlock = buildRosterBlock(engineers, 'vham', [{key:'am', label:'VH AM'},{key:'pm', label:'VH PM'}]);
+    }
+
+    return `<div class="fi-table-card">
+      <div class="fi-table-card-header">${label} <span style="font-weight:400;text-transform:none;letter-spacing:0;margin-left:0.25rem;opacity:.7">${engineers.length} engineers</span></div>
+      <div style="overflow-x:auto">
+        <table class="sched-table">
+          <thead><tr>
+            <th class="sched-th" style="min-width:13.75rem">Engineer</th>
+            ${teamCol}${dayCols}
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="qm-strip">${qmBoxes}</div>
+      ${rosterBlock}
+    </div>`;
+  };
+
+  el.innerHTML =
+    buildTable(coreEngineers, 'core', 'Core Engineers', true) +
+    buildSimpleTable(VH_ENGINEERS,  'vh',   'Focus Team') +
+    buildSimpleTable(VH_AM_ENGINEERS,'vham','TechM');
+}
+
+function onScheduleChange(sel, prefix, i, day){
+  _isEditing=true; clearTimeout(window._editTimer); window._editTimer=setTimeout(()=>_isEditing=false,3000);
+  const val = sel.value;
+  setStatus(prefix,i,day,val);
+  sel.className = 'status-sel '+(SM[val]?.selCls||'');
+  save();
+  renderQueue();
+}
+
+// ── P1 QUEUE ───────────────────────────────────────────
+function syncRR(){
+  const existing = new Map(rr.entries.map(e=>[e.engIdx,e]));
+  rr.entries = coreEngineers.map((_,i)=>existing.get(i)||{engIdx:i,tickets:[]});
+}
+function isAvail(engIdx){
+  if(!activeWeek||!weeks[activeWeek]) return false;
+  return getStatus('core',engIdx,queueDay)==='available';
+}
+function findNext(){
+  const n = rr.entries.length;
+  for(let off=0;off<n;off++){
+    const idx=(rr.pointer+off)%n;
+    if(isAvail(rr.entries[idx].engIdx)) return idx;
+  }
+  return -1;
+}
+
+function buildQueueDaySel(){
+  const sel = document.getElementById('queueDaySel');
+  if(sel) sel.innerHTML = DAYS.map(d=>`<option value="${d}"${d===queueDay?' selected':''}>${d}</option>`).join('');
+}
+
+function teamsNotify(email, name, tickets){
+  if(!email) return;
+  const ticketList = Array.isArray(tickets)?tickets.filter(Boolean):(tickets?[tickets]:[]);
+  const ticketPart = ticketList.length?' für P1 #'+ticketList.join(', #'):'';
+  const msg='Hi '+name.split(' ')[0]+', du bist in der P1 Queue dran'+ticketPart+'. Kannst du dieses Ticket übernehmen?';
+  window.open('https://teams.microsoft.com/l/chat/0/0?users='+encodeURIComponent(email)+'&message='+encodeURIComponent(msg),'_blank');
+}
+
+function getViennaTimeStr(){
+  return new Date().toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Vienna'});
+}
+
+function logAssignment(ticket, engName){
+  assignLog.unshift({time: getViennaTimeStr(), ticket, engName});
+  if(assignLog.length > 100) assignLog.pop();
+}
+
+function renderQueue(){
+  buildQueueDaySel();
+  syncRR();
+
+  // Collect all engineers (core + focus team roster for today + techm roster)
+  // Unassigned = tickets not yet in any entry
+  const allTickets = rr.entries.flatMap(e=>e.tickets);
+  const openCount  = rr.entries.filter(e=>e.tickets.length===0 && isAvail(e.engIdx)).length; // available with no ticket
+  const availCount = coreEngineers.filter((_,i)=>isAvail(i)).length;
+  const todayAssigned = assignLog.filter(l=>{
+    const todayKey = getTodayKey();
+    return true; // all in log counted as today (log resets on data clear)
+  }).length;
+
+  // Update stat tiles
+  const setEl = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  setEl('statOpen',   rr.entries.reduce((s,e)=>s+(e.tickets.length>0?1:0),0));
+  setEl('statAssigned', assignLog.length);
+  setEl('statAvail',  availCount);
+
+  // Engineer board — group by status, only available engineers shown prominently
+  const STATUS_GROUPS = [
+    {key:'available', label:'Available',          chipCls:'sc-available', hdr:'sh-available'},
+    {key:'qm-am',     label:'QM AM – Morning',    chipCls:'sc-qm-am',     hdr:'sh-qm-am'},
+    {key:'qm-pm',     label:'QM PM – Afternoon',  chipCls:'sc-qm-pm',     hdr:'sh-qm-pm'},
+    {key:'chat-am',   label:'Chat AM',             chipCls:'sc-chat-am',   hdr:'sh-chat'},
+    {key:'chat-pm',   label:'Chat PM',             chipCls:'sc-chat-pm',   hdr:'sh-chat'},
+    {key:'edu',       label:'EDU',                 chipCls:'sc-edu',       hdr:'sh-edu'},
+    {key:'admin',     label:'Admin',               chipCls:'sc-admin',     hdr:'sh-admin'},
+    {key:'mentoring', label:'Mentoring',           chipCls:'sc-mentoring', hdr:'sh-admin'},
+    {key:'project',   label:'Project',             chipCls:'sc-project',   hdr:'sh-edu'},
+    {key:'late',      label:'Late',                chipCls:'sc-late',      hdr:'sh-late'},
+    {key:'km',        label:'KM',                  chipCls:'sc-km',        hdr:'sh-qm-am'},
+    {key:'ooo',       label:'Out of Office',       chipCls:'sc-ooo',       hdr:'sh-ooo'},
+    {key:'ooo-km',    label:'OOO/KM',              chipCls:'sc-ooo-km',    hdr:'sh-ooo'},
+    {key:'',          label:'No Status',           chipCls:'sc-none',      hdr:''},
+  ];
+
+  // Also include Focus Team (VH) roster person for today
+  const focusPerson = getRosterVal('vh','vh',queueDay);
+  const techmAM     = getRosterVal('vham','am',queueDay);
+  const techmPM     = getRosterVal('vham','pm',queueDay);
+
+  // Build grouped engineer list
+  const grouped = {};
+  coreEngineers.forEach((eng,i)=>{
+    const st = getStatus('core',i,queueDay)||'';
+    if(!grouped[st]) grouped[st]=[];
+    const entry = rr.entries[i];
+    grouped[st].push({eng,i,entry});
+  });
+
+  const boardEl = document.getElementById('engBoard');
+  if(!boardEl) return;
+
+  let boardHtml = '';
+
+  // Only show groups that have engineers
+  STATUS_GROUPS.forEach(grp=>{
+    const members = grouped[grp.key]||[];
+    if(!members.length) return;
+    const isOOO = grp.key==='ooo'||grp.key==='ooo-km';
+    const cards = members.map(({eng,i,entry})=>{
+      const tickets = entry&&entry.tickets.length
+        ? entry.tickets.map((t,ti)=>`<span class="eng-board-ticket" draggable="true"
+            data-from="${rr.entries.indexOf(entry)}" data-ti="${ti}"
+            ondragstart="onDragStart(event)" ondragend="onDragEnd(event)"
+          >${t}<span class="del" onclick="removeTicket(${rr.entries.indexOf(entry)},${ti})">×</span></span>`).join('')
+        : '';
+      const teamsBtn = eng.email&&!isOOO
+        ? `<button onclick="teamsNotify('${eng.email}','${eng.name}',[${entry?entry.tickets.map(t=>"'"+t+"'").join(','):''}])"
+            style="margin-top:0.25rem;background:none;border:1px solid #5b5ea6;border-radius:0.25rem;color:#5b5ea6;font-size:0.5625rem;font-weight:700;padding:0.0625rem 0.375rem;cursor:pointer">Teams</button>`
+        : '';
+      return `<div class="eng-board-card${isOOO?' is-ooo':''}"
+          data-drop="${i}"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="eng-board-name${isOOO?' ooo-name':''}">${eng.name.split(' ')[0]} ${eng.name.split(' ').slice(1).join(' ')}</div>
+        ${tickets?`<div class="eng-board-tickets">${tickets}</div>`:''}
+        ${teamsBtn}
+      </div>`;
+    }).join('');
+    boardHtml += `<div class="eng-board-section">
+      <div class="eng-board-section-head ${grp.hdr}">
+        <span>${grp.label}</span>
+        <span class="eng-board-section-count">${members.length} ${isOOO?'OOO':'active'}</span>
+      </div>
+      <div class="eng-board-cards">${cards}</div>
+    </div>`;
+  });
+
+  // Focus Team person for today
+  if(focusPerson){
+    boardHtml += `<div class="eng-board-section">
+      <div class="eng-board-section-head sh-roster"><span>Focus Team — VH P1</span><span class="eng-board-section-count">${queueDay}</span></div>
+      <div class="eng-board-cards">
+        <div class="eng-board-card"><div class="eng-board-name">${focusPerson}</div></div>
+      </div>
+    </div>`;
+  }
+  if(techmAM||techmPM){
+    boardHtml += `<div class="eng-board-section">
+      <div class="eng-board-section-head sh-roster"><span>TechM — VH P1</span><span class="eng-board-section-count">${queueDay}</span></div>
+      <div class="eng-board-cards">
+        ${techmAM?`<div class="eng-board-card"><div class="eng-board-name" style="font-size:0.625rem;color:var(--_text2);margin-bottom:0.125rem">AM</div><div class="eng-board-name">${techmAM}</div></div>`:''}
+        ${techmPM?`<div class="eng-board-card"><div class="eng-board-name" style="font-size:0.625rem;color:var(--_text2);margin-bottom:0.125rem">PM</div><div class="eng-board-name">${techmPM}</div></div>`:''}
+      </div>
+    </div>`;
+  }
+
+  boardEl.innerHTML = boardHtml || '<div style="color:var(--_text2);font-size:0.8125rem;padding:1rem">No engineers found. Create a schedule week first.</div>';
+
+  // Assignment log
+  renderLog();
+}
+
+function renderLog(){
+  const tbody    = document.getElementById('logBody');
+  const countEl  = document.getElementById('logCount');
+  const summaryEl= document.getElementById('logSummary');
+  const nextUpEl = document.getElementById('logNextUp');
+  if(countEl) countEl.textContent = assignLog.length;
+
+  // Next up
+  syncRR();
+  const nextIdx = findNext();
+  if(nextUpEl){
+    if(nextIdx !== -1){
+      const eng = coreEngineers[rr.entries[nextIdx].engIdx];
+      nextUpEl.innerHTML = '&#9654; <strong>Next up: '+eng.name+'</strong>';
+      nextUpEl.style.display = 'block';
+    } else {
+      nextUpEl.style.display = 'none';
+    }
+  }
+
+  // Summary per engineer — collect tickets from rr.entries
+  if(summaryEl){
+    const engWithTickets = rr.entries
+      .filter(e=>e.tickets.length>0)
+      .map(e=>({eng:coreEngineers[e.engIdx], tickets:e.tickets, entryIdx:rr.entries.indexOf(e)}));
+
+    if(!engWithTickets.length){
+      summaryEl.innerHTML = '<div style="padding:0.625rem 0.875rem;font-size:0.8125rem;color:var(--_text2);font-style:italic">No tickets assigned yet</div>';
+    } else {
+      summaryEl.innerHTML = engWithTickets.map(({eng,tickets,entryIdx})=>{
+        const color = eng ? engColor(coreEngineers.indexOf(eng)) : '#64748B';
+        const ini = eng ? initials(eng.name) : '?';
+        const ticketPills = tickets.map((t,ti)=>
+          `<span class="log-summary-ticket" draggable="true"
+            data-from="${entryIdx}" data-ti="${ti}"
+            ondragstart="onDragStart(event)" ondragend="onDragEnd(event)"
+          >${t}</span>`
+        ).join('');
+        return `<div class="log-summary-row">
+          <div class="log-summary-av" style="background:${color}">${ini}</div>
+          <div class="log-summary-name">${eng?eng.name:'Unknown'}</div>
+          <div class="log-summary-tickets">${ticketPills}</div>
+          <div class="log-summary-count">${tickets.length}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Chronological log
+  if(!tbody) return;
+  if(!assignLog.length){
+    tbody.innerHTML='<tr><td class="log-td" colspan="3" style="text-align:center;color:var(--_text2)">No assignments yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = assignLog.map(l=>`<tr class="log-tr">
+    <td class="log-td log-time">${l.time}</td>
+    <td class="log-td log-ticket">${l.ticket}</td>
+    <td class="log-td log-eng">${l.engName}</td>
+  </tr>`).join('');
+}
+
+function assignP1(){
+  const input = document.getElementById('ticketInput');
+  const ticket = (input.value||'').trim();
+  if(!ticket){ input.focus(); return; }
+  syncRR();
+  const idx = findNext();
+  if(idx===-1){ alert('No available engineers on '+queueDay+'. Set status to Available in Schedule tab.'); return; }
+  const eng = coreEngineers[rr.entries[idx].engIdx];
+  rr.entries[idx].tickets.push(ticket);
+  rr.pointer = (idx+1)%rr.entries.length;
+  input.value='';
+  recordP1();
+  logAssignment(ticket, eng.name);
+  save();
+  renderQueue();
+  renderP1Chart();
+}
+
+function manualAssignBoard(engIdx, ticket){
+  if(!ticket){ return; }
+  syncRR();
+  const entryIdx = rr.entries.findIndex(e=>e.engIdx===engIdx);
+  if(entryIdx===-1) return;
+  const eng = coreEngineers[engIdx];
+  rr.entries[entryIdx].tickets.push(ticket);
+  rr.pointer = (entryIdx+1)%rr.entries.length;
+  recordP1();
+  logAssignment(ticket, eng.name);
+  save();
+  renderQueue();
+  renderP1Chart();
+}
+
+function removeTicket(ei,ti){
+  rr.entries[ei].tickets.splice(ti,1);
+  save(); renderQueue();
+}
+
+// drag-drop
+function onDragStart(e){
+  _dragFromEntry=parseInt(e.currentTarget.dataset.from);
+  _dragFromTicket=parseInt(e.currentTarget.dataset.ti);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function onDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.hero-drop,.eng-card-tickets').forEach(z=>z.classList.remove('over'));
+}
+function onDragOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; e.currentTarget.classList.add('over'); }
+function onDragLeave(e){ e.currentTarget.classList.remove('over'); }
+function onDrop(e){
+  e.preventDefault(); e.currentTarget.classList.remove('over');
+  const to = parseInt(e.currentTarget.dataset.drop);
+  if(_dragFromEntry===-1) return;
+  let targetEntryIdx = to;
+  const asEngIdx = rr.entries.findIndex(e=>e.engIdx===to);
+  if(asEngIdx !== -1 && asEngIdx !== to) targetEntryIdx = asEngIdx;
+  if(targetEntryIdx===_dragFromEntry) return;
+  const t = rr.entries[_dragFromEntry].tickets.splice(_dragFromTicket,1)[0];
+  if(t===undefined) return;
+  const eng = coreEngineers[rr.entries[targetEntryIdx]?.engIdx];
+  rr.entries[targetEntryIdx].tickets.push(t);
+  // Update log: find existing entry for this ticket and update name, or add new
+  if(eng){
+    const existing = assignLog.find(l=>l.ticket===t);
+    if(existing){
+      existing.engName = eng.name;
+      existing.time = getViennaTimeStr()+' (reassigned)';
+    } else {
+      logAssignment(t, eng.name);
+    }
+  }
+  _dragFromEntry=-1; _dragFromTicket=-1;
+  save(); renderQueue();
+}
+
+// ── P1 CHART ───────────────────────────────────────────
+function getViennaHour(){
+  return parseInt(new Date().toLocaleString('en-US',{hour:'numeric',hour12:false,timeZone:'Europe/Vienna'}));
+}
+function getTodayKey(){
+  return getViennaDate().toLocaleDateString('en-CA');
+}
+function recordP1(){
+  const dayKey = getTodayKey();
+  const hour   = getViennaHour();
+  if(!p1Log[dayKey]) p1Log[dayKey] = {};
+  p1Log[dayKey][hour] = (p1Log[dayKey][hour]||0) + 1;
+}
+
+function renderP1Chart(){
+  const wrap = document.getElementById('p1ChartWrap');
+  if(!wrap) return;
+
+  const dayKey = getTodayKey();
+  const dayData = p1Log[dayKey]||{};
+  const total = Object.values(dayData).reduce((s,v)=>s+v,0);
+
+  const heroEl = document.getElementById('p1TotalHero');
+  const subEl  = document.getElementById('p1ChartDate');
+  if(heroEl) heroEl.textContent = total;
+  if(subEl){
+    const vienna = getViennaDate();
+    subEl.textContent = vienna.toLocaleDateString('de-AT',{weekday:'long',day:'2-digit',month:'long'});
+  }
+
+  const START_H = 7, END_H = 18;
+  const hours = [];
+  for(let h=START_H; h<=END_H; h++) hours.push(h);
+  const counts = hours.map(h => dayData[h]||0);
+  const maxCount = Math.max(...counts, 1);
+
+  const W = wrap.clientWidth || 300;
+  const H = 140;
+  const PAD_LEFT = 24, PAD_RIGHT = 8, PAD_TOP = 16, PAD_BOTTOM = 28;
+  const chartW = W - PAD_LEFT - PAD_RIGHT;
+  const chartH = H - PAD_TOP - PAD_BOTTOM;
+  const barSlot = chartW / hours.length;
+  const barW = Math.min(20, barSlot * 0.6);
+  const currentHour = getViennaHour();
+
+  let bars = '', labels = '', gridlines = '', yLabels = '';
+
+  [0, maxCount].forEach(v => {
+    const y = PAD_TOP + chartH - (v/maxCount)*chartH;
+    gridlines += `<line x1="${PAD_LEFT}" y1="${y}" x2="${W-PAD_RIGHT}" y2="${y}" stroke="#e1e0d9" stroke-width="1"/>`;
+    yLabels += `<text x="${PAD_LEFT-4}" y="${y+4}" text-anchor="end" font-size="10" fill="#898781">${v}</text>`;
+  });
+
+  hours.forEach((h, i) => {
+    const count = counts[i];
+    const x = PAD_LEFT + i*barSlot + barSlot/2 - barW/2;
+    const barH = count>0 ? Math.max((count/maxCount)*chartH, 4) : 0;
+    const y = PAD_TOP + chartH - barH;
+    const isCurrentHour = h === currentHour;
+    const fill = isCurrentHour ? '#0064d9' : (count>0 ? '#7ab8f5' : '#e1e0d9');
+
+    if(barH > 0){
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" ry="4" fill="${fill}" class="p1-bar" data-hour="${h}" data-count="${count}" style="cursor:default"/>`;
+      if(barH >= 18){
+        bars += `<text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="600" fill="#52514e">${count}</text>`;
+      }
+    } else {
+      bars += `<rect x="${x}" y="${PAD_TOP+chartH-2}" width="${barW}" height="2" rx="1" fill="#e1e0d9" data-hour="${h}" data-count="0" class="p1-bar" style="cursor:default"/>`;
+    }
+
+    if(i % 2 === 0 || i === hours.length-1){
+      labels += `<text x="${PAD_LEFT + i*barSlot + barSlot/2}" y="${PAD_TOP+chartH+16}" text-anchor="middle" font-size="10" fill="#898781">${h}:00</text>`;
+    }
+  });
+
+  const baseY = PAD_TOP + chartH;
+  gridlines += `<line x1="${PAD_LEFT}" y1="${baseY}" x2="${W-PAD_RIGHT}" y2="${baseY}" stroke="#c3c2b7" stroke-width="1"/>`;
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible">
+      ${gridlines}${yLabels}${bars}${labels}
+    </svg>
+    <div class="p1-tooltip" id="p1Tooltip"></div>`;
+
+  wrap.querySelectorAll('.p1-bar').forEach(bar => {
+    bar.addEventListener('mouseenter', e => {
+      const rect = wrap.getBoundingClientRect();
+      const barRect = bar.getBoundingClientRect();
+      const tip = document.getElementById('p1Tooltip');
+      const h = bar.dataset.hour;
+      const c = bar.dataset.count;
+      tip.textContent = `${h}:00 — ${c} ticket${c!=='1'?'s':''}`;
+      tip.style.left = (barRect.left - rect.left + barRect.width/2) + 'px';
+      tip.style.top  = (barRect.top  - rect.top  - 28) + 'px';
+      tip.classList.add('visible');
+    });
+    bar.addEventListener('mouseleave', () => {
+      const tip = document.getElementById('p1Tooltip');
+      if(tip) tip.classList.remove('visible');
+    });
+  });
+}
+
+// ── PERSISTENCE ────────────────────────────────────────
+function save(){
+  const payload={weeks,activeWeek,rr,coreEngineers,p1Log,roster,assignLog};
+  try{localStorage.setItem('qm_v4',JSON.stringify(payload));}catch(e){}
+  fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+}
+function load(){
+  fetch(API)
+    .then(r=>r.json())
+    .then(d=>{ applyData(d); })
+    .catch(()=>{ loadLocal(); });
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('qm_v4'); if(!raw)return;
+    applyData(JSON.parse(raw));
+  }catch(e){}
+}
+function applyData(d){
+  if(d.weeks&&Object.keys(d.weeks).length){ weeks=d.weeks; }
+  if(d.activeWeek&&weeks[d.activeWeek]) activeWeek=d.activeWeek;
+  if(d.rr) rr=d.rr;
+  if(d.p1Log) p1Log=d.p1Log;
+  if(d.roster) roster=d.roster;
+  if(d.assignLog) assignLog=d.assignLog;
+  if(d.coreEngineers&&d.coreEngineers.length) coreEngineers=d.coreEngineers;
+  syncRR();
+  if(activeWeek){
+    const w=weeks[activeWeek];
+    document.getElementById('weekLabel').textContent='KW '+w.week+' / '+w.year+' · '+getWeekRange(w.week,w.year);
+  }
+  renderAll();
+}
+
+// ── AUTO-SYNC ──────────────────────────────────────────
+function hashStr(obj){
+  const s=JSON.stringify(obj); let h=0;
+  for(let i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}
+  return String(h);
+}
+function poll(){
+  if(_isEditing) return;
+  fetch(API).then(r=>r.json()).then(d=>{
+    const h=hashStr(d);
+    if(h===_lastHash) return;
+    _lastHash=h;
+    if(d.weeks&&Object.keys(d.weeks).length){ applyData(d); }
+  }).catch(()=>{});
+}
+
+// ── INIT ───────────────────────────────────────────────
+
+// ── INIT ───────────────────────────────────────────────
+function renderAll(){
+  renderSchedule();
+  renderQueue();
+  renderP1Chart();
+}
+
+document.getElementById('weekModal').addEventListener('click', e=>{ if(e.target===document.getElementById('weekModal')) closeWeekModal(); });
+document.getElementById('engModal').addEventListener('click',  e=>{ if(e.target===document.getElementById('engModal'))  closeEngModal(); });
+document.getElementById('rccModal').addEventListener('click',  e=>{ if(e.target===document.getElementById('rccModal'))  closeRccModal(); });
+
+if(location.protocol !== 'file:'){
+  setInterval(poll, 15000);
+}
+
+load();
+</script>
+</body>
+</html>
